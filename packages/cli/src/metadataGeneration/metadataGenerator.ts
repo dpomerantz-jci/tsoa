@@ -6,6 +6,7 @@ import { GenerateMetadataError } from './exceptions';
 import { Tsoa } from '@tsoa/runtime';
 import { TypeResolver } from './typeResolver';
 import { getDecorators } from '../utils/decoratorUtils';
+import { munge } from './FixupMetadata';
 
 export class MetadataGenerator {
   public readonly controllerNodes = new Array<ts.ClassDeclaration>();
@@ -29,10 +30,14 @@ export class MetadataGenerator {
     this.checkForPathParamSignatureDuplicates(controllers);
     this.circularDependencyResolvers.forEach(c => c(this.referenceTypeMap));
 
-    return {
+    const ret: Tsoa.Metadata = {
       controllers,
       referenceTypeMap: this.referenceTypeMap,
     };
+
+    munge(ret);
+
+    return ret;
   }
 
   private setProgramToDynamicControllersFiles(controllers: string[]) {
