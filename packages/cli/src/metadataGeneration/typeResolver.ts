@@ -2,7 +2,7 @@ import * as ts from 'typescript';
 import { getJSDocComment, getJSDocComments, getJSDocTagNames, isExistJSDocTag } from './../utils/jsDocUtils';
 import { getDecorators, getNodeFirstDecoratorValue, isDecorator } from './../utils/decoratorUtils';
 import { getPropertyValidators } from './../utils/validatorUtils';
-import { GenerateMetadataError } from './exceptions';
+import { GenerateMetadataError, GenerateMetaDataWarning } from './exceptions';
 import { getInitializerValue } from './initializer-value';
 import { MetadataGenerator } from './metadataGenerator';
 import { Tsoa, assertNever } from '@tsoa/runtime';
@@ -243,13 +243,45 @@ export class TypeResolver {
       }
     }
 
+    // keyof
     if (ts.isTypeOperatorNode(this.typeNode) && this.typeNode.operator === ts.SyntaxKind.KeyOfKeyword) {
       const type = this.current.typeChecker.getTypeFromTypeNode(this.typeNode);
-      try {
-        return new TypeResolver(this.current.typeChecker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.NoTruncation)!, this.current, this.typeNode, this.context, this.referencer).resolve();
-      } catch (err) {
-        const indexedTypeName = this.current.typeChecker.typeToString(this.current.typeChecker.getTypeFromTypeNode(this.typeNode.type));
-        throw new GenerateMetadataError(`Could not determine the keys on ${indexedTypeName}`, this.typeNode);
+
+      if (type.isUnion()) {
+        const literals = type.types.filter(t => t.isLiteral()).reduce((acc, t: ts.LiteralType) => [...acc, t.value.toString()], []);
+
+        // Warn on nonsense (`number`, `typeof Symbol.iterator`)
+        if (type.types.find(t => !t.isLiteral()) !== undefined) {
+          const problems = type.types.filter(t => !t.isLiteral()).map(t => this.current.typeChecker.typeToString(t));
+          console.warn(new GenerateMetaDataWarning(`Skipped non-literal type(s) ${problems.join(', ')}`, this.typeNode).toString());
+        }
+
+        return {
+          dataType: 'enum',
+          enums: literals,
+        };
+      } else if (type.isLiteral()) {
+        return {
+          dataType: 'enum',
+          enums: [type.value.toString()],
+        };
+      } else if ((type.getFlags() & ts.TypeFlags.Never) !== 0) {
+        throw new GenerateMetadataError(`TypeOperator 'keyof' on node produced a never type`, this.typeNode);
+      } else {
+        const warning = new GenerateMetaDataWarning(
+          `Couldn't resolve keyof reliably, please check the resulting type carefully.
+            Reason: Type was not a literal or an array of literals.`,
+          this.typeNode,
+        );
+
+        console.warn(warning.toString());
+
+        try {
+          return new TypeResolver(this.current.typeChecker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.NoTruncation)!, this.current, this.typeNode, this.context, this.referencer).resolve();
+        } catch (err) {
+          const indexedTypeName = this.current.typeChecker.typeToString(this.current.typeChecker.getTypeFromTypeNode(this.typeNode.type));
+          throw new GenerateMetadataError(`Could not determine the keys on ${indexedTypeName}`, this.typeNode);
+        }
       }
     }
 
@@ -258,6 +290,7 @@ export class TypeResolver {
       return new TypeResolver(this.typeNode.type, this.current, this.typeNode, this.context, this.referencer).resolve();
     }
 
+    // Indexed by keyword
     if (ts.isIndexedAccessTypeNode(this.typeNode) && (this.typeNode.indexType.kind === ts.SyntaxKind.NumberKeyword || this.typeNode.indexType.kind === ts.SyntaxKind.StringKeyword)) {
       const numberIndexType = this.typeNode.indexType.kind === ts.SyntaxKind.NumberKeyword;
       const objectType = this.current.typeChecker.getTypeFromTypeNode(this.typeNode.objectType);
@@ -268,6 +301,7 @@ export class TypeResolver {
       return new TypeResolver(this.current.typeChecker.typeToTypeNode(type, undefined, undefined)!, this.current, this.typeNode, this.context, this.referencer).resolve();
     }
 
+    // Indexed by literal
     if (
       ts.isIndexedAccessTypeNode(this.typeNode) &&
       ts.isLiteralTypeNode(this.typeNode.indexType) &&
@@ -294,6 +328,18 @@ export class TypeResolver {
           )}`,
           this.typeNode,
         );
+      }
+    }
+
+    // Indexed by keyof typeof value
+    if (ts.isIndexedAccessTypeNode(this.typeNode) && ts.isTypeOperatorNode(this.typeNode.indexType) && this.typeNode.indexType.operator === ts.SyntaxKind.KeyOfKeyword) {
+      const resolveParenthesis = (node: ts.TypeNode) => (ts.isParenthesizedTypeNode(node) ? node.type : node);
+      const objectType = resolveParenthesis(this.typeNode.objectType);
+      const indexType = this.typeNode.indexType.type;
+      if (ts.isTypeQueryNode(objectType) && ts.isTypeQueryNode(indexType) && objectType.exprName.getText() === indexType.exprName.getText()) {
+        const type = this.current.typeChecker.getTypeFromTypeNode(this.typeNode);
+        const node = this.current.typeChecker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias)!;
+        return new TypeResolver(node, this.current, this.typeNode, this.context, this.referencer).resolve();
       }
     }
 

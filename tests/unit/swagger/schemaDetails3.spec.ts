@@ -1242,6 +1242,30 @@ describe('Definition generation for OpenAPI 3.0.0', () => {
           indexed: (propertyName, propertySchema) => {
             expect(propertySchema.$ref).to.eq('#/components/schemas/Partial_Indexed-at-foo_');
           },
+          indexedValue: (propertyName, propertySchema) => {
+            expect(propertySchema.$ref).to.eq('#/components/schemas/IndexedValue');
+            const schema = getComponentSchema('IndexedValue', currentSpec);
+            expect(schema).to.deep.eq({
+              type: 'string',
+              enum: ['FOO', 'BAR'],
+              default: undefined,
+              description: undefined,
+              example: undefined,
+              format: undefined,
+            });
+          },
+          parenthesizedIndexedValue: (propertyName, propertySchema) => {
+            expect(propertySchema.$ref).to.eq('#/components/schemas/ParenthesizedIndexedValue');
+            const schema = getComponentSchema('ParenthesizedIndexedValue', currentSpec);
+            expect(schema).to.deep.eq({
+              type: 'string',
+              enum: ['FOO', 'BAR'],
+              default: undefined,
+              description: undefined,
+              example: undefined,
+              format: undefined,
+            });
+          },
           record: (propertyName, propertySchema) => {
             expect(propertySchema.$ref).to.eq('#/components/schemas/Record_record-foo-or-record-bar._data-string__');
             const schema = getComponentSchema('Record_record-foo-or-record-bar._data-string__', currentSpec);
@@ -1830,6 +1854,7 @@ describe('Definition generation for OpenAPI 3.0.0', () => {
                     default: undefined,
                     description: undefined,
                     enum: ['OK', 'KO'],
+                    nullable: false,
                     example: undefined,
                     format: undefined,
                     type: 'string',
@@ -2202,6 +2227,20 @@ describe('Definition generation for OpenAPI 3.0.0', () => {
                 example: undefined,
                 'x-key-1': 'value-1',
                 'x-key-2': 'value-2',
+              },
+              `for property ${propertyName}`,
+            );
+          },
+          keyofLiteral: (propertyName, propertySchema) => {
+            expect(propertySchema).to.deep.eq(
+              {
+                type: 'string',
+                enum: ['type1', 'type2'],
+                default: undefined,
+                description: undefined,
+                format: undefined,
+                nullable: false,
+                example: undefined,
               },
               `for property ${propertyName}`,
             );

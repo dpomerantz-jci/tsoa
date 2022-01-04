@@ -473,6 +473,12 @@ describe('Definition generation', () => {
           indexed: (propertyName, propertySchema) => {
             expect(propertySchema.$ref).to.eq('#/definitions/Partial_Indexed-at-foo_');
           },
+          indexedValue: (propertyName, propertySchema) => {
+            expect(propertySchema.$ref).to.eq('#/definitions/IndexedValue');
+          },
+          parenthesizedIndexedValue: (propertyName, propertySchema) => {
+            expect(propertySchema.$ref).to.eq('#/definitions/ParenthesizedIndexedValue');
+          },
           record: (propertyName, propertySchema) => {
             expect(propertySchema.$ref).to.eq('#/definitions/Record_record-foo-or-record-bar._data-string__');
             const schema = getValidatedDefinition('Record_record-foo-or-record-bar._data-string__', currentSpec);
@@ -1414,6 +1420,20 @@ describe('Definition generation', () => {
                 example: undefined,
                 'x-key-1': 'value-1',
                 'x-key-2': 'value-2',
+              },
+              `for property ${propertyName}`,
+            );
+          },
+          keyofLiteral: (propertyName, propertySchema) => {
+            expect(propertySchema).to.deep.eq(
+              {
+                type: 'string',
+                enum: ['type1', 'type2'],
+                default: undefined,
+                description: undefined,
+                format: undefined,
+                example: undefined,
+                'x-nullable': false,
               },
               `for property ${propertyName}`,
             );

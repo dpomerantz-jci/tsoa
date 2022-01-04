@@ -1,4 +1,5 @@
 import { Swagger } from './swagger/swagger';
+import { Options as MulterOpts } from 'multer';
 
 export interface Config {
   /**
@@ -38,6 +39,16 @@ export interface Config {
    * @memberof RoutesConfig
    */
   compilerOptions?: Record<string, unknown>;
+
+  /**
+   * Multer's options to generate multer's middleware.
+   * It doesn't support storage option
+   *
+   * @example {
+   *   "dest": "/tmp"
+   * } Allow multer to write to file instead of using Memory's buffer
+   */
+  multerOpts?: MulterOpts;
 }
 
 /**
@@ -206,10 +217,9 @@ export interface RoutesConfig {
   authenticationModule?: string;
 
   /**
-   * When enabled, the `@SuccessResponse` annotations' code is used for responses by default.
-   * Otherwise, non-empty responses default to 200 and empty responses to 204.
+   * When enabled, the imports in the routes files will have a `.js` extention to support esm.
    *
    * @default false
    */
-  useSuccessResponseCode?: boolean;
+  esm?: boolean;
 }

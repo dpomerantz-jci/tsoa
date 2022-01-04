@@ -1,15 +1,14 @@
-import * as bodyParser from 'body-parser';
-import * as express from 'express';
-import * as methodOverride from 'method-override';
-import '../controllers/rootController';
-import '../controllers/noExtendsController';
-import '../controllers/testController';
+import express, { RequestHandler } from 'express';
+import methodOverride from 'method-override';
+import bodyParser from 'body-parser';
 
-import { RegisterRoutes } from './routes';
+import './rootController.js';
+
+import { RegisterRoutes } from './routes.js';
 
 export const app: express.Express = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }) as RequestHandler);
+app.use(bodyParser.json() as RequestHandler);
 app.use(methodOverride());
 app.use((req: any, res: any, next: any) => {
   req.stringValue = 'fancyStringForContext';

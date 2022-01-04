@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import * as os from 'os';
 import chalk from 'chalk';
 import { generateSpecAndRoutes } from '@tsoa/cli/cli';
 import { generateRoutes } from '@tsoa/cli/module/generate-routes';
@@ -7,6 +8,13 @@ import { Timer } from './utils/timer';
 const spec = async () => {
   const result = await generateSpecAndRoutes({
     configuration: 'tsoa.json',
+  });
+  return result;
+};
+
+const specESM = async () => {
+  const result = await generateSpecAndRoutes({
+    configuration: 'esm/tsoa.json',
   });
   return result;
 };
@@ -22,7 +30,8 @@ const log = async <T>(label: string, fn: () => Promise<T>) => {
 };
 
 (async () => {
-  const metadata = await log('Swagger Spec Generation', spec);
+  const [metadata, metadataESM] = await Promise.all([log('Swagger Spec Generation', spec), log('Swagger ESM Spec Generation', specESM)]);
+
   await Promise.all([
     log('Express Route Generation', () =>
       generateRoutes(
@@ -37,6 +46,21 @@ const log = async <T>(label: string, fn: () => Promise<T>) => {
         undefined,
         undefined,
         metadata,
+      ),
+    ),
+    log('Express ESM Route Generation', () =>
+      generateRoutes(
+        {
+          noImplicitAdditionalProperties: 'silently-remove-extras',
+          basePath: '/v1',
+          entryFile: './esm/fixtures/express/server.ts',
+          middleware: 'express',
+          routesDir: './esm/fixtures/express',
+          esm: true,
+        },
+        undefined,
+        undefined,
+        metadataESM,
       ),
     ),
     log('Express Router Route Generation', () =>
@@ -84,22 +108,6 @@ const log = async <T>(label: string, fn: () => Promise<T>) => {
         metadata,
       ),
     ),
-    log('Express Route Generation with useSuccessResponseCode feature', () =>
-      generateRoutes(
-        {
-          noImplicitAdditionalProperties: 'silently-remove-extras',
-          authenticationModule: './fixtures/express/authentication.ts',
-          basePath: '/v1',
-          entryFile: './fixtures/express-success-code/server.ts',
-          middleware: 'express',
-          routesDir: './fixtures/express-success-code',
-          useSuccessResponseCode: true,
-        },
-        undefined,
-        undefined,
-        metadata,
-      ),
-    ),
     log('Koa Route Generation', () =>
       generateRoutes({
         noImplicitAdditionalProperties: 'silently-remove-extras',
@@ -108,6 +116,19 @@ const log = async <T>(label: string, fn: () => Promise<T>) => {
         entryFile: './fixtures/koa/server.ts',
         middleware: 'koa',
         routesDir: './fixtures/koa',
+      }),
+    ),
+
+    log('Koa Route Generation (with multerOpts)', () =>
+      generateRoutes({
+        noImplicitAdditionalProperties: 'silently-remove-extras',
+        basePath: '/v1',
+        entryFile: './fixtures/koa-multer-options/server.ts',
+        middleware: 'koa',
+        routesDir: './fixtures/koa-multer-options',
+        multerOpts: {
+          dest: os.tmpdir(),
+        },
       }),
     ),
     log('Koa Route Generation (but noImplicitAdditionalProperties is set to "throw-on-extras")', () =>
@@ -120,17 +141,6 @@ const log = async <T>(label: string, fn: () => Promise<T>) => {
         routesDir: './fixtures/koaNoAdditional',
       }),
     ),
-    log('Koa Route Generation with useSuccessResponseCode feature', () =>
-      generateRoutes({
-        noImplicitAdditionalProperties: 'silently-remove-extras',
-        authenticationModule: './fixtures/koa/authentication.ts',
-        basePath: '/v1',
-        entryFile: './fixtures/koa-success-code/server.ts',
-        middleware: 'koa',
-        routesDir: './fixtures/koa-success-code',
-        useSuccessResponseCode: true,
-      }),
-    ),
     log('Hapi Route Generation', () =>
       generateRoutes({
         noImplicitAdditionalProperties: 'silently-remove-extras',
@@ -139,17 +149,6 @@ const log = async <T>(label: string, fn: () => Promise<T>) => {
         entryFile: './fixtures/hapi/server.ts',
         middleware: 'hapi',
         routesDir: './fixtures/hapi',
-      }),
-    ),
-    log('Hapi Route Generation with useSuccessResponseCode feature', () =>
-      generateRoutes({
-        noImplicitAdditionalProperties: 'silently-remove-extras',
-        authenticationModule: './fixtures/hapi/authentication.ts',
-        basePath: '/v1',
-        entryFile: './fixtures/hapi-success-code/server.ts',
-        middleware: 'hapi',
-        routesDir: './fixtures/hapi-success-code',
-        useSuccessResponseCode: true,
       }),
     ),
     log('Custom Route Generation', () =>
