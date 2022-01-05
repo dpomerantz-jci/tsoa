@@ -31,11 +31,13 @@ export function munge(metadata: Tsoa.Metadata) {
 }
 
 function fixupProperties(container) {
-  for (const property of container.properties) {
-    property.name = camelToSnake(property.name);
+  if (container && container.properties && typeof container.properties[Symbol.iterator] === 'function') {
+    for (const property of container.properties) {
+      property.name = camelToSnake(property.name);
 
-    if (property.type && property.type.properties) {
-      fixupProperties(property.type);
+      if (property.type && property.type.properties) {
+        fixupProperties(property.type);
+      }
     }
   }
 
