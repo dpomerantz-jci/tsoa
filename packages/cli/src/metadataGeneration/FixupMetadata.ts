@@ -31,18 +31,20 @@ export function munge(metadata: Tsoa.Metadata) {
 }
 
 function fixupProperties(container) {
-  if (container && container.properties && typeof container.properties[Symbol.iterator] === 'function') {
-    for (const property of container.properties) {
-      property.name = camelToSnake(property.name);
+  if (container) {
+    if (container.properties && typeof container.properties[Symbol.iterator] === 'function') {
+      for (const property of container.properties) {
+        property.name = camelToSnake(property.name);
 
-      if (property.type && property.type.properties) {
-        fixupProperties(property.type);
+        if (property.type && property.type.properties) {
+          fixupProperties(property.type);
+        }
       }
     }
-  }
 
-  if (container.refName) {
-    container.refName = camelToSnake(container.refName);
+    if (container.refName) {
+      container.refName = camelToSnake(container.refName);
+    }
   }
 }
 
