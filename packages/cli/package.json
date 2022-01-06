@@ -22,7 +22,8 @@
     "copy-templates": "copyfiles -u 1 ./src/routeGeneration/templates/**/* ./dist",
     "clean": "rimraf dist tsconfig.tsbuildinfo",
     "tsc": "tsc -b",
-    "watch": "tsc -b -w"
+    "watch": "tsc -b -w",
+    "tar": "mkdir tar | tar -cf tar/tsoa_cli.tar dist/*"
   },
   "author": "Luke Autry <lukeautry@gmail.com> (http://www.lukeautry.com)",
   "license": "MIT",
@@ -47,7 +48,8 @@
     "@types/yamljs": "^0.2.30",
     "@types/yargs": "^15.0.14",
     "copyfiles": "^2.2.0",
-    "rimraf": "^3.0.0"
+    "rimraf": "^3.0.0",
+    "tar": "^6.1.11"
   },
   "repository": {
     "type": "git",
