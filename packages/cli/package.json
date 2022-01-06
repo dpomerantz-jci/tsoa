@@ -23,7 +23,7 @@
     "clean": "rimraf dist tsconfig.tsbuildinfo",
     "tsc": "tsc -b",
     "watch": "tsc -b -w",
-    "tar": "mkdir tardist | tar -c --exclude tardist -f tardist/tsoa_cli.tar *"
+    "tar": "mkdir tardist | tar -cz --exclude tardist -f tardist/tsoa_cli.tz *"
   },
   "author": "Luke Autry <lukeautry@gmail.com> (http://www.lukeautry.com)",
   "license": "MIT",
